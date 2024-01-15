@@ -1,0 +1,23 @@
+@flaas_HostAddress = http://10.0.1.236:5112
+
+GET {{flaas_HostAddress}}/
+Accept: application/json
+
+###
+
+POST {{flaas_HostAddress}}/on
+
+###
+
+POST {{flaas_HostAddress}}/off
+
+###
+
+POST {{flaas_HostAddress}}/brightness
+Content-Type: application/json
+
+{
+    "value": 80
+}
+
+###
