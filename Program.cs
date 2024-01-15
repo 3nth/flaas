@@ -16,6 +16,12 @@ var sensor = FanLightController.CreateFanLightController(app.Configuration["Sens
 
 app.MapGet("/", () => Results.Ok(sensor.Get()));
 
+app.MapPost("/", ([FromBody] State state) =>
+{
+    sensor.Set(state);
+    return Results.Accepted();
+});
+
 app.MapPost("/on", () =>
 {
     sensor.On();
@@ -28,19 +34,18 @@ app.MapPost("/off", () =>
     return Results.Accepted();
 });
 
-app.MapPost("/brightness", ([FromBody] Level level) =>
+app.MapPost("/brightness", ([FromBody] State level) =>
 {
-    sensor.Set(level.Value);
+    sensor.SetBrightness(level.Brightness);
     return Results.Accepted();
 });
 
 app.Run("http://*:5112");
 
-public record Level(int Value);
 
 // Our custom JSON serializer context that generates code to serialize
 // arrays of planets so that we can use it with our HTTP endpoint.
-[JsonSerializable(typeof(Level[]))]
+[JsonSerializable(typeof(State[]))]
 public partial class AppJsonSerializerContext : JsonSerializerContext
 {
 }
