@@ -5,7 +5,7 @@ namespace flaas;
 public class FanLightController
 {
     private readonly ISensor _sensor;
-    private int _brightness = 75;
+    private float _brightness = 75;
     private bool _isOn;
 
     public FanLightController(ISensor sensor)
@@ -16,12 +16,14 @@ public class FanLightController
 
     public void On()
     {
-        _sensor.Control.SetSoftware(_brightness);
+        _isOn = true;
+        SetBrightness(_brightness);
 
     }
 
     public void Off()
     {
+        _isOn = false;
         _sensor.Control.SetSoftware(0);
 
     }
@@ -46,11 +48,11 @@ public class FanLightController
             Off();
     }
 
-    public void SetBrightness(int level)
+    public void SetBrightness(float level)
     {
         _brightness = level;
         if(_isOn)
-            _sensor.Control.SetSoftware(level);
+            _sensor.Control.SetSoftware(_brightness);
     }
 
     public static FanLightController CreateFanLightController(string name)
@@ -77,7 +79,7 @@ public class FanLightController
     }
 }
 
-public record State(bool IsOn, int Brightness);
+public record State(bool IsOn, float Brightness);
 
 public class UpdateVisitor : IVisitor
 {

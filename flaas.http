@@ -17,7 +17,7 @@ POST {{flaas_HostAddress}}/brightness
 Content-Type: application/json
 
 {
-    "Brightness": 80
+    "brightness": 77.7
 }
 
 ###
@@ -26,8 +26,8 @@ POST {{flaas_HostAddress}}/
 Content-Type: application/json
 
 {
-    "IsOn": false,
-    "Brightness": 80
+    "isOn": false,
+    "brightness": 80
 }
 
 ###
@@ -36,8 +36,8 @@ POST {{flaas_HostAddress}}/
 Content-Type: application/json
 
 {
-    "IsOn": true,
-    "Brightness": 100
+    "isOn": true,
+    "brightness": 100
 }
 
 ###
