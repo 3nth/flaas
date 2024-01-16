@@ -2,24 +2,23 @@
 
 1. Connect a dimmable LED to a fan header on your system.
 
-2. Figure out what the name of it is and set in app.settings
+2. Figure out what the name of it is using [Fan Control](https://getfancontrol.com/) and set in `app.settings`
 
-3. run (requires administrator to control "fan speed")
+3. Run (requires administrator in order to control "fan speed")
 
-4. Connect your service to home assistant
+4. Connect your service to [Home Assistant](https://www.home-assistant.io/)
 
 ```yaml
 
 input_number:
   fanlight_brightness:
-    name: fanlight
     initial: 191
     min: 0
     max: 255
     step: 1
 
 compensation:
-  fanlight_brightness_100:
+  fanlight_brightness:
     source: input_number.fanlight_brightness
     precision: 0
     data_points:
@@ -28,7 +27,6 @@ compensation:
 
 switch:
   - platform: rest
-    name: fanlight
     resource: http://<YOUR_IP>:5112/
     body_on: '{"isOn": true, "brightness": {{ states("sensor.compensation_input_number_fanlight_brightness") }}}'
     body_off: '{"isOn": false}'
@@ -40,8 +38,6 @@ light:
   - platform: template
     lights:
       fanlight:
-        friendly_name: "fanlight"
-        unique_id: fanlight
         value_template: "{{ states('switch.fanlight') == 'on' }}"
         turn_off:
           service: switch.turn_off
@@ -60,5 +56,5 @@ light:
             data_template:
               entity_id:
                 - switch.fanlight
-                
+
 ```
