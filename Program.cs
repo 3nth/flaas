@@ -1,9 +1,10 @@
 using flaas;
 using Microsoft.AspNetCore.Mvc;
-using System.Reflection.Emit;
+using Microsoft.Extensions.Hosting.WindowsServices;
 using System.Text.Json.Serialization;
 
-var builder = WebApplication.CreateSlimBuilder(args);
+var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddWindowsService();
 
 builder.Services.ConfigureHttpJsonOptions(options =>
 {
@@ -40,7 +41,9 @@ app.MapPost("/brightness", ([FromBody] State level) =>
     return Results.Accepted();
 });
 
-app.Run("http://*:5112");
+
+await app.RunAsync("http://*:5112");
+
 
 
 // Our custom JSON serializer context that generates code to serialize
