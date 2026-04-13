@@ -60,7 +60,7 @@ public class FanLightController
 
     public void SetBrightness(float level)
     {
-        _brightness = level;
+        _brightness = Math.Clamp(level, 1, 100);
         if(_isOn)
             _sensor.Control.SetSoftware(_brightness);
         SaveState();
