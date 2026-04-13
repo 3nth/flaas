@@ -141,16 +141,20 @@
   const error = document.getElementById('error');
 
   let updating = false;
+  const apiKey = new URLSearchParams(location.search).get('key') || '';
 
   async function api(path, body, method) {
     error.textContent = '';
     try {
-      const opts = { method: method || (body !== undefined ? 'POST' : 'GET') };
+      const m = method || (body !== undefined ? 'POST' : 'GET');
+      const opts = { method: m, headers: {} };
       if (body !== undefined) {
-        opts.headers = { 'Content-Type': 'application/json' };
+        opts.headers['Content-Type'] = 'application/json';
         opts.body = JSON.stringify(body);
       }
+      if (apiKey && m === 'POST') opts.headers['X-Api-Key'] = apiKey;
       const res = await fetch(path, opts);
+      if (res.status === 401) throw new Error('Invalid API key');
       if (!res.ok) throw new Error(res.statusText);
       return res.status === 200 ? await res.json() : null;
     } catch (e) {

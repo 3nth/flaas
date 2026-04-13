@@ -25,8 +25,8 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 });
 
 var config = builder.Configuration;
-var port = config["Port"] ?? "5112";
-builder.WebHost.UseUrls($"http://*:{port}");
+var listenUrl = config["ListenUrl"] ?? "http://*:5112";
+builder.WebHost.UseUrls(listenUrl);
 var hardwareMin = float.TryParse(config["HardwareMin"], out var min) ? min : 1;
 var hardwareMax = float.TryParse(config["HardwareMax"], out var max) ? max : 100;
 using var loggerFactory = LoggerFactory.Create(b => b.AddConsole());
@@ -35,7 +35,26 @@ builder.Services.AddSingleton(sensor);
 builder.Services.AddSingleton<MqttBridge>();
 builder.Services.AddHostedService<MqttBridge>(sp => sp.GetRequiredService<MqttBridge>());
 
+var apiKey = config["ApiKey"];
+
 var app = builder.Build();
+
+if (!string.IsNullOrEmpty(apiKey))
+{
+    app.Use(async (context, next) =>
+    {
+        if (HttpMethods.IsPost(context.Request.Method))
+        {
+            var provided = context.Request.Headers["X-Api-Key"].FirstOrDefault();
+            if (provided != apiKey)
+            {
+                context.Response.StatusCode = 401;
+                return;
+            }
+        }
+        await next();
+    });
+}
 
 app.MapGet("/ui", () =>
 {
