@@ -33,11 +33,11 @@ Defaults to LocalSystem (needs admin for LibreHardwareMonitor). Override with `-
 
 Three source files, no layers:
 
-- **Program.cs** — Minimal API setup with six endpoints (including `/health`). Configures Windows Service hosting and AOT-compatible JSON serialization (`AppJsonSerializerContext`). Listens on configurable port (default `5112`).
+- **Program.cs** — Minimal API setup with six endpoints (including `/health`). Configures Windows Service hosting, AOT-compatible JSON serialization (`AppJsonSerializerContext`), and optional API key middleware. Listens on configurable URL (default `http://*:5112`).
 - **FanLightController.cs** — Stateful singleton that wraps a LibreHardwareMonitor `ISensor`. Tracks `_isOn` and `_brightness` in memory. Fires `StateChanged` event on every mutation. `CreateFanLightController` scans motherboard sub-hardware for a `SensorType.Control` sensor matching the configured name.
-- **MqttBridge.cs** — `BackgroundService` that connects to an MQTT broker and publishes HA MQTT Discovery config (default schema with separate state/brightness topics). Subscribes to command topics for on/off and brightness. Listens to `homeassistant/status` birth message to re-announce on HA restart. Publishes availability via LWT.
+- **MqttBridge.cs** — `BackgroundService` that connects to an MQTT broker (with optional TLS) and publishes HA MQTT Discovery config (default schema with separate state/brightness topics). Subscribes to command topics for on/off and brightness. Listens to `homeassistant/status` birth message to re-announce on HA restart. Publishes availability via LWT. Exposes `MqttEnabled`/`MqttConnected` for the `/health` endpoint.
 
-**Key types:** `State` (record: `IsOn`, `Brightness`), `UpdateVisitor` (LibreHardwareMonitor traversal helper).
+**Key types:** `State` (record: `IsOn`, `Brightness`), `Health` (record: `MqttEnabled`, `MqttConnected`), `UpdateVisitor` (LibreHardwareMonitor traversal helper).
 
 ## API Endpoints
 
@@ -57,6 +57,8 @@ See `flaas.http` for example requests.
 `appsettings.json` contains:
 
 - `SensorName` — the LibreHardwareMonitor sensor name (e.g., `"AIO Pump"`). Use `--list-sensors` or [Fan Control](https://getfancontrol.com/) to discover the correct name.
-- `Mqtt` section — broker connection and HA discovery settings. Leave `Host` empty to disable MQTT.
+- `ListenUrl` — bind address (default `http://*:5112`). Set to `http://localhost:5112` to restrict to loopback.
+- `ApiKey` — when set, POST endpoints require `X-Api-Key` header. GET endpoints remain open.
+- `Mqtt` section — broker connection and HA discovery settings. Leave `Host` empty to disable MQTT. Set `Tls` to `true` for encrypted connections (port defaults to 8883).
 
 The service runs from `C:\flaas`. The source repo is at `D:\flaas`. Always use `pwsh` for shell commands.

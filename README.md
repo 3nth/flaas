@@ -37,6 +37,7 @@ Add the MQTT section to `appsettings.json`:
   "Mqtt": {
     "Host": "your-mqtt-broker",
     "Port": 1883,
+    "Tls": false,
     "Username": "",
     "Password": "",
     "TopicPrefix": "flaas",
@@ -54,13 +55,23 @@ The MQTT bridge will:
 
 `HardwareMin` and `HardwareMax` map the 1-100% brightness range to your hardware's actual usable range. For example, if your LED is off below 55%, set `HardwareMin` to 55. Both are optional and default to 1/100.
 
+Set `Mqtt:Tls` to `true` to connect via TLS (port defaults to 8883). Works with the HA Mosquitto add-on's TLS listener and Let's Encrypt certs.
+
 Leave `Mqtt:Host` empty to disable MQTT and use only the REST API.
+
+## Security
+
+**API key** — Set `ApiKey` in `appsettings.json` to require an `X-Api-Key` header on all POST requests. GET endpoints (state, UI, health) remain open. Access the UI with the key via `/ui?key=YOUR_KEY`.
+
+**Listen address** — Set `ListenUrl` to control the bind address (default `http://*:5112`). Use `http://localhost:5112` to restrict to loopback when only MQTT control is needed.
+
+**MQTT TLS** — Set `Mqtt:Tls` to `true` to encrypt the broker connection. Port defaults to 8883 when TLS is enabled.
 
 ## Build & Deploy
 
 ```bash
 dotnet build
-dotnet run                          # runs on http://localhost:5112 (configurable via "Port" in appsettings.json)
+dotnet run                          # runs on http://localhost:5112 (configurable via ListenUrl)
 dotnet publish -c Release -o C:\flaas  # deploy to service directory
 ```
 
