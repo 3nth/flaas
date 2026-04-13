@@ -62,7 +62,9 @@ public class MqttBridge : BackgroundService
         _controller.StateChanged += state =>
         {
             if (_client?.IsConnected == true)
-                _ = PublishStateAsync(state);
+                _ = PublishStateAsync(state).ContinueWith(
+                    t => _logger.LogWarning(t.Exception, "Failed to publish state to MQTT"),
+                    TaskContinuationOptions.OnlyOnFaulted);
         };
 
         while (!stoppingToken.IsCancellationRequested)
@@ -91,7 +93,7 @@ public class MqttBridge : BackgroundService
             }
         }
 
-        if (_client.IsConnected)
+        if (_client?.IsConnected == true)
         {
             // Mark as offline on clean shutdown
             await _client.PublishAsync(new MqttApplicationMessageBuilder()
