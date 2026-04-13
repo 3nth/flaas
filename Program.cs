@@ -29,7 +29,8 @@ builder.WebHost.UseUrls("http://*:5112");
 var config = builder.Configuration;
 var hardwareMin = float.TryParse(config["HardwareMin"], out var min) ? min : 1;
 var hardwareMax = float.TryParse(config["HardwareMax"], out var max) ? max : 100;
-var sensor = FanLightController.CreateFanLightController(config["SensorName"], hardwareMin, hardwareMax);
+using var loggerFactory = LoggerFactory.Create(b => b.AddConsole());
+var sensor = FanLightController.CreateFanLightController(config["SensorName"], loggerFactory.CreateLogger<FanLightController>(), hardwareMin, hardwareMax);
 builder.Services.AddSingleton(sensor);
 builder.Services.AddHostedService<flaas.MqttBridge>();
 

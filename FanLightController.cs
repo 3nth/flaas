@@ -10,14 +10,17 @@ public class FanLightController
     private readonly ISensor _sensor;
     private readonly float _hardwareMin;
     private readonly float _hardwareMax;
+    private readonly ILogger<FanLightController> _logger;
+    private readonly Lock _stateLock = new();
     private float _brightness = 75;
     private bool _isOn;
 
     public event Action<State>? StateChanged;
 
-    public FanLightController(ISensor sensor, float hardwareMin = 1, float hardwareMax = 100)
+    public FanLightController(ISensor sensor, ILogger<FanLightController> logger, float hardwareMin = 1, float hardwareMax = 100)
     {
         _sensor = sensor;
+        _logger = logger;
         _hardwareMin = hardwareMin;
         _hardwareMax = hardwareMax;
         LoadState();
@@ -27,43 +30,63 @@ public class FanLightController
 
     public void On()
     {
-        _isOn = true;
-        SetBrightness(_brightness);
-        SaveState();
+        lock (_stateLock)
+        {
+            _isOn = true;
+            SetBrightnessInternal(_brightness);
+            SaveState();
+        }
     }
 
     public void Off()
     {
-        _isOn = false;
-        _sensor.Control.SetSoftware(0);
-        SaveState();
+        lock (_stateLock)
+        {
+            _isOn = false;
+            _sensor.Control.SetSoftware(0);
+            SaveState();
+        }
     }
 
     public State Get()
     {
-        return new State(_isOn, _brightness);
+        lock (_stateLock)
+            return new State(_isOn, _brightness);
     }
 
     public void Set(State state)
     {
-        _brightness = state.Brightness;
-        _isOn = state.IsOn;
+        lock (_stateLock)
+        {
+            _brightness = state.Brightness;
+            _isOn = state.IsOn;
 
-        if(_isOn)
-            On();
-        else
-            Off();
+            if (_isOn)
+                SetBrightnessInternal(_brightness);
+            else
+                _sensor.Control.SetSoftware(0);
+
+            SaveState();
+        }
     }
 
     public void SetBrightness(float level)
     {
+        lock (_stateLock)
+        {
+            SetBrightnessInternal(level);
+            SaveState();
+        }
+    }
+
+    private void SetBrightnessInternal(float level)
+    {
         _brightness = Math.Clamp(level, 1, 100);
-        if(_isOn)
+        if (_isOn)
         {
             var hardware = _hardwareMin + (_brightness / 100f) * (_hardwareMax - _hardwareMin);
             _sensor.Control.SetSoftware(hardware);
         }
-        SaveState();
     }
 
     private void SaveState()
@@ -86,7 +109,7 @@ public class FanLightController
             _isOn = state.IsOn;
             _brightness = state.Brightness;
         }
-        catch (Exception) { /* corrupt state file, use defaults */ }
+        catch (Exception ex) { _logger.LogWarning(ex, "Failed to load state from {Path}, using defaults", StatePath); }
     }
 
     public static List<string> ListControlSensors()
@@ -98,7 +121,7 @@ public class FanLightController
             .ToList();
     }
 
-    public static FanLightController CreateFanLightController(string? name, float hardwareMin = 1, float hardwareMax = 100)
+    public static FanLightController CreateFanLightController(string? name, ILogger<FanLightController> logger, float hardwareMin = 1, float hardwareMax = 100)
     {
         var computer = CreateComputer();
 
@@ -117,7 +140,7 @@ public class FanLightController
                 $"Sensor \"{name}\" not found. Available control sensors: {available}");
         }
 
-        return new FanLightController(sensor, hardwareMin, hardwareMax);
+        return new FanLightController(sensor, logger, hardwareMin, hardwareMax);
     }
 
     private static Computer CreateComputer()
