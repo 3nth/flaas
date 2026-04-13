@@ -63,7 +63,7 @@ public class FanLightController
             IsGpuEnabled = false,
             IsMemoryEnabled = false,
             IsMotherboardEnabled = true,
-            IsControllerEnabled = false,
+            IsControllerEnabled = true,
             IsNetworkEnabled = false,
             IsStorageEnabled = false
         };
@@ -71,11 +71,33 @@ public class FanLightController
         computer.Open();
         computer.Accept(new UpdateVisitor());
 
-        var sensor = computer.Hardware.SelectMany(h => h.SubHardware).SelectMany(sh => sh.Sensors)
-            .SingleOrDefault(s => s.SensorType == SensorType.Control && s.Name == name);
+        IEnumerable<ISensor> EnumerateSensors(IEnumerable<IHardware> hardware)
+        {
+            foreach (var hw in hardware)
+            {
+                foreach (var s in hw.Sensors)
+                    yield return s;
+                foreach (var s in EnumerateSensors(hw.SubHardware))
+                    yield return s;
+            }
+        }
+
+        var allSensors = EnumerateSensors(computer.Hardware)
+            .Where(s => s.SensorType == SensorType.Control)
+            .ToList();
+
+        var sensor = allSensors.SingleOrDefault(s => s.Name == name);
+
+        if (sensor is null)
+        {
+            var available = allSensors.Count > 0
+                ? string.Join(", ", allSensors.Select(s => $"\"{s.Name}\""))
+                : "(none found)";
+            throw new InvalidOperationException(
+                $"Sensor \"{name}\" not found. Available control sensors: {available}");
+        }
 
         return new FanLightController(sensor);
-
     }
 }
 
