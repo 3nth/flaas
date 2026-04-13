@@ -11,6 +11,7 @@ public class MqttBridge : BackgroundService
     private readonly IConfiguration _config;
     private readonly ILogger<MqttBridge> _logger;
     private IMqttClient? _client;
+    private bool _hasConnected;
 
     private string TopicPrefix => _config["Mqtt:TopicPrefix"] ?? "flaas";
     private string StateTopic => $"{TopicPrefix}/light/state";
@@ -40,13 +41,14 @@ public class MqttBridge : BackgroundService
         var port = int.TryParse(_config["Mqtt:Port"], out var p) ? p : 1883;
         var user = _config["Mqtt:Username"] ?? "";
         var pass = _config["Mqtt:Password"] ?? "";
+        var clientId = $"flaas-{Environment.MachineName}";
 
         var factory = new MqttFactory();
         _client = factory.CreateMqttClient();
 
         var optionsBuilder = new MqttClientOptionsBuilder()
             .WithTcpServer(host, port)
-            .WithClientId($"flaas-{Environment.MachineName}")
+            .WithClientId(clientId)
             .WithCleanSession(false)
             .WithWillTopic(AvailabilityTopic)
             .WithWillPayload("offline")
@@ -56,6 +58,9 @@ public class MqttBridge : BackgroundService
             optionsBuilder.WithCredentials(user, pass);
 
         var options = optionsBuilder.Build();
+
+        _logger.LogInformation("MQTT bridge starting, broker {Host}:{Port}, client {ClientId}{Auth}",
+            host, port, clientId, string.IsNullOrEmpty(user) ? "" : $", user {user}");
 
         _client.ApplicationMessageReceivedAsync += OnMessageReceived;
 
@@ -73,9 +78,14 @@ public class MqttBridge : BackgroundService
             {
                 if (!_client.IsConnected)
                 {
-                    _logger.LogInformation("Connecting to MQTT broker at {Host}:{Port}", host, port);
+                    if (_hasConnected)
+                        _logger.LogInformation("Reconnecting to MQTT broker");
                     await _client.ConnectAsync(options, stoppingToken);
-                    _logger.LogInformation("Connected to MQTT broker");
+                    if (_hasConnected)
+                        _logger.LogInformation("Reconnected to MQTT broker");
+                    else
+                        _logger.LogInformation("Connected to MQTT broker");
+                    _hasConnected = true;
 
                     await SubscribeAndAnnounceAsync();
                 }
@@ -95,7 +105,6 @@ public class MqttBridge : BackgroundService
 
         if (_client?.IsConnected == true)
         {
-            // Mark as offline on clean shutdown
             await _client.PublishAsync(new MqttApplicationMessageBuilder()
                 .WithTopic(AvailabilityTopic)
                 .WithPayload("offline")
@@ -104,22 +113,23 @@ public class MqttBridge : BackgroundService
 
             await _client.DisconnectAsync();
         }
+
+        _logger.LogInformation("MQTT bridge stopped");
     }
 
     private async Task SubscribeAndAnnounceAsync()
     {
-        // Subscribe to command topics
         await _client!.SubscribeAsync(new MqttTopicFilterBuilder()
             .WithTopic(CommandTopic)
             .Build());
         await _client!.SubscribeAsync(new MqttTopicFilterBuilder()
             .WithTopic(BrightnessCommandTopic)
             .Build());
-
-        // Subscribe to HA birth message so we re-announce on HA restart
         await _client!.SubscribeAsync(new MqttTopicFilterBuilder()
             .WithTopic(HAStatusTopic)
             .Build());
+        _logger.LogDebug("Subscribed to {CommandTopic}, {BrightnessTopic}, {StatusTopic}",
+            CommandTopic, BrightnessCommandTopic, HAStatusTopic);
 
         await PublishDiscoveryAsync();
 
@@ -188,6 +198,8 @@ public class MqttBridge : BackgroundService
             var topic = e.ApplicationMessage.Topic;
             var payload = Encoding.UTF8.GetString(e.ApplicationMessage.PayloadSegment);
 
+            _logger.LogDebug("MQTT message received: {Topic} = {Payload}", topic, payload);
+
             if (topic == HAStatusTopic && payload == "online")
             {
                 _logger.LogInformation("Home Assistant came online, re-publishing discovery");
@@ -205,11 +217,15 @@ public class MqttBridge : BackgroundService
                     _controller.On();
                 else if (payload == "OFF")
                     _controller.Off();
+                else
+                    _logger.LogWarning("Unknown command payload: {Payload}", payload);
             }
             else if (topic == BrightnessCommandTopic)
             {
                 if (float.TryParse(payload, out var brightness))
                     _controller.SetBrightness(brightness);
+                else
+                    _logger.LogWarning("Invalid brightness payload: {Payload}", payload);
             }
         }
         catch (Exception ex)

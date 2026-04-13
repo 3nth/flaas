@@ -24,6 +24,8 @@ public class FanLightController
         _hardwareMin = hardwareMin;
         _hardwareMax = hardwareMax;
         LoadState();
+        _logger.LogInformation("Sensor {SensorName} initialized, hardware range {Min}-{Max}, state: {State} brightness: {Brightness}%",
+            sensor.Name, hardwareMin, hardwareMax, _isOn ? "ON" : "OFF", _brightness);
         if (_isOn)
             On();
     }
