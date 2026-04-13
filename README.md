@@ -1,60 +1,92 @@
 # Fan-Light-as-a-Service
 
-1. Connect a dimmable LED to a fan header on your system.
+A minimal ASP.NET Core Web API that controls a dimmable LED connected to a motherboard fan header via [LibreHardwareMonitor](https://github.com/LibreHardwareMonitor/LibreHardwareMonitor). Runs as a Windows Service and integrates with [Home Assistant](https://www.home-assistant.io/) via MQTT Discovery.
 
-2. Figure out what the name of it is using [Fan Control](https://getfancontrol.com/) and set in `app.settings`
+## Setup
 
-3. Run (requires administrator in order to control "fan speed")
+1. Connect a dimmable LED to a fan header on your motherboard.
 
-4. Connect your service to [Home Assistant](https://www.home-assistant.io/)
+2. Identify the sensor name using [Fan Control](https://getfancontrol.com/), or run:
+   ```bash
+   dotnet run -- --list-sensors
+   ```
 
-```yaml
+3. Set the sensor name in `appsettings.json`:
+   ```json
+   {
+     "SensorName": "AIO Pump"
+   }
+   ```
 
-input_number:
-  fanlight_brightness:
-    initial: 191
-    min: 0
-    max: 255
-    step: 1
+4. Run (requires administrator privileges for hardware control):
+   ```bash
+   dotnet run
+   ```
 
-compensation:
-  fanlight_brightness:
-    source: input_number.fanlight_brightness
-    precision: 0
-    data_points:
-      - [0, 0]
-      - [255, 100]
+## Home Assistant Integration
 
-switch:
-  - platform: rest
-    resource: http://<YOUR_IP>:5112/
-    body_on: '{"isOn": true, "brightness": {{ states("sensor.compensation_input_number_fanlight_brightness") }}}'
-    body_off: '{"isOn": false}'
-    is_on_template: "{{ value_json.isOn }}"
-    headers:
-      Content-Type: application/json
+flaas uses MQTT with Home Assistant Discovery. When configured, the light entity appears automatically in Home Assistant -- no manual HA configuration needed.
 
-light:
-  - platform: template
-    lights:
-      fanlight:
-        value_template: "{{ states('switch.fanlight') == 'on' }}"
-        turn_off:
-          service: switch.turn_off
-          target:
-            entity_id: switch.fanlight
-        turn_on:
-          service: switch.turn_on
-          target:
-            entity_id: switch.fanlight
-        set_level:
-          - service: input_number.set_value
-            data:
-              value: "{{ brightness }}"
-              entity_id: input_number.fanlight_brightness
-          - service: switch.turn_on
-            data_template:
-              entity_id:
-                - switch.fanlight
+Add the MQTT section to `appsettings.json`:
 
+```json
+{
+  "SensorName": "AIO Pump",
+  "Mqtt": {
+    "Host": "your-mqtt-broker",
+    "Port": 1883,
+    "Username": "",
+    "Password": "",
+    "TopicPrefix": "flaas",
+    "DeviceName": "Fan Light"
+  }
+}
 ```
+
+The MQTT bridge will:
+- Publish a discovery config so HA auto-creates a dimmable light entity
+- Publish state and brightness changes in real time
+- Accept on/off and brightness commands from HA
+- Re-announce when HA restarts (via the `homeassistant/status` birth message)
+- Report availability (online/offline) including on unexpected disconnects via MQTT LWT
+
+Leave `Mqtt:Host` empty to disable MQTT and use only the REST API.
+
+## Build & Deploy
+
+```bash
+dotnet build
+dotnet run                          # runs on http://localhost:5112
+dotnet publish -c Release -o C:\flaas  # deploy to service directory
+```
+
+**Note:** `appsettings.json` is excluded from publish output to avoid overwriting production config. Target: .NET 9.0, win-x64 only.
+
+## Install as Windows Service
+
+```powershell
+# From the publish directory, run as admin:
+.\install.ps1
+```
+
+The installer will prompt you to select a sensor if `SensorName` is not already configured. 
+
+The service account defaults to LocalSystem since the service needs admin access to control fan hardware via LibreHardwareMonitor. Override with `-Account` if needed.
+
+Manage the service with:
+```
+sc start flaas
+sc stop flaas
+```
+
+## REST API
+
+A web UI is available at `/ui`. The following endpoints are also available:
+
+| Method | Path          | Body                              | Description            |
+|--------|---------------|-----------------------------------|------------------------|
+| GET    | `/`           | --                                | Current state          |
+| POST   | `/`           | `{"isOn": bool, "brightness": N}` | Set full state         |
+| POST   | `/on`         | --                                | Turn on                |
+| POST   | `/off`        | --                                | Turn off               |
+| POST   | `/brightness` | `{"brightness": N}`               | Set brightness (1-100) |
