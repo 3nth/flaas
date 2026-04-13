@@ -24,9 +24,9 @@ builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.TypeInfoResolverChain.Insert(0, AppJsonSerializerContext.Default);
 });
 
-builder.WebHost.UseUrls("http://*:5112");
-
 var config = builder.Configuration;
+var port = config["Port"] ?? "5112";
+builder.WebHost.UseUrls($"http://*:{port}");
 var hardwareMin = float.TryParse(config["HardwareMin"], out var min) ? min : 1;
 var hardwareMax = float.TryParse(config["HardwareMax"], out var max) ? max : 100;
 using var loggerFactory = LoggerFactory.Create(b => b.AddConsole());
@@ -41,6 +41,8 @@ app.MapGet("/ui", () =>
     var path = Path.Combine(AppContext.BaseDirectory, "ui.html");
     return Results.File(path, "text/html");
 });
+
+app.MapGet("/health", () => Results.Ok());
 
 app.MapGet("/", () => Results.Ok(sensor.Get()));
 
