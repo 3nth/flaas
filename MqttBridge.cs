@@ -41,7 +41,8 @@ public class MqttBridge : BackgroundService
             return;
         }
 
-        var port = int.TryParse(_config["Mqtt:Port"], out var p) ? p : 1883;
+        var useTls = string.Equals(_config["Mqtt:Tls"], "true", StringComparison.OrdinalIgnoreCase);
+        var port = int.TryParse(_config["Mqtt:Port"], out var p) ? p : (useTls ? 8883 : 1883);
         var user = _config["Mqtt:Username"] ?? "";
         var pass = _config["Mqtt:Password"] ?? "";
         var clientId = $"flaas-{Environment.MachineName}";
@@ -60,10 +61,13 @@ public class MqttBridge : BackgroundService
         if (!string.IsNullOrEmpty(user))
             optionsBuilder.WithCredentials(user, pass);
 
+        if (useTls)
+            optionsBuilder.WithTlsOptions(_ => { });
+
         var options = optionsBuilder.Build();
 
-        _logger.LogInformation("MQTT bridge starting, broker {Host}:{Port}, client {ClientId}{Auth}",
-            host, port, clientId, string.IsNullOrEmpty(user) ? "" : $", user {user}");
+        _logger.LogInformation("MQTT bridge starting, broker {Host}:{Port}{Tls}, client {ClientId}{Auth}",
+            host, port, useTls ? " (TLS)" : "", clientId, string.IsNullOrEmpty(user) ? "" : $", user {user}");
 
         _client.ApplicationMessageReceivedAsync += OnMessageReceived;
 
