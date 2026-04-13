@@ -1,9 +1,12 @@
-﻿using LibreHardwareMonitor.Hardware;
+﻿using System.Text.Json;
+using LibreHardwareMonitor.Hardware;
 
 namespace flaas;
 
 public class FanLightController
 {
+    private static readonly string StatePath = Path.Combine(AppContext.BaseDirectory, "state.json");
+
     private readonly ISensor _sensor;
     private float _brightness = 75;
     private bool _isOn;
@@ -11,24 +14,23 @@ public class FanLightController
     public FanLightController(ISensor sensor)
     {
         _sensor = sensor;
-        _sensor.Hardware.Update();
-        _isOn = _sensor.Value > 0;
+        LoadState();
         if (_isOn)
-            _brightness = (int)(_sensor.Value ?? 0);
+            On();
     }
 
     public void On()
     {
         _isOn = true;
         SetBrightness(_brightness);
-
+        SaveState();
     }
 
     public void Off()
     {
         _isOn = false;
         _sensor.Control.SetSoftware(0);
-
+        SaveState();
     }
 
     public State Get()
@@ -61,6 +63,28 @@ public class FanLightController
         _brightness = level;
         if(_isOn)
             _sensor.Control.SetSoftware(_brightness);
+        SaveState();
+    }
+
+    private void SaveState()
+    {
+        var json = JsonSerializer.Serialize(new State(_isOn, _brightness));
+        File.WriteAllText(StatePath, json);
+    }
+
+    private void LoadState()
+    {
+        if (!File.Exists(StatePath))
+            return;
+        try
+        {
+            var json = File.ReadAllText(StatePath);
+            var state = JsonSerializer.Deserialize<State>(json);
+            if (state is null) return;
+            _isOn = state.IsOn;
+            _brightness = state.Brightness;
+        }
+        catch (Exception) { /* corrupt state file, use defaults */ }
     }
 
     public static List<string> ListControlSensors()
