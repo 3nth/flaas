@@ -32,6 +32,8 @@ Add the MQTT section to `appsettings.json`:
 ```json
 {
   "SensorName": "AIO Pump",
+  "HardwareMin": 55,
+  "HardwareMax": 100,
   "Mqtt": {
     "Host": "your-mqtt-broker",
     "Port": 1883,
@@ -49,6 +51,8 @@ The MQTT bridge will:
 - Accept on/off and brightness commands from HA
 - Re-announce when HA restarts (via the `homeassistant/status` birth message)
 - Report availability (online/offline) including on unexpected disconnects via MQTT LWT
+
+`HardwareMin` and `HardwareMax` map the 1-100% brightness range to your hardware's actual usable range. For example, if your LED is off below 55%, set `HardwareMin` to 55. Both are optional and default to 0/100.
 
 Leave `Mqtt:Host` empty to disable MQTT and use only the REST API.
 

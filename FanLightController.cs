@@ -8,14 +8,18 @@ public class FanLightController
     private static readonly string StatePath = Path.Combine(AppContext.BaseDirectory, "state.json");
 
     private readonly ISensor _sensor;
+    private readonly float _hardwareMin;
+    private readonly float _hardwareMax;
     private float _brightness = 75;
     private bool _isOn;
 
     public event Action<State>? StateChanged;
 
-    public FanLightController(ISensor sensor)
+    public FanLightController(ISensor sensor, float hardwareMin = 0, float hardwareMax = 100)
     {
         _sensor = sensor;
+        _hardwareMin = hardwareMin;
+        _hardwareMax = hardwareMax;
         LoadState();
         if (_isOn)
             On();
@@ -55,7 +59,10 @@ public class FanLightController
     {
         _brightness = Math.Clamp(level, 1, 100);
         if(_isOn)
-            _sensor.Control.SetSoftware(_brightness);
+        {
+            var hardware = _hardwareMin + (_brightness / 100f) * (_hardwareMax - _hardwareMin);
+            _sensor.Control.SetSoftware(hardware);
+        }
         SaveState();
     }
 
@@ -91,7 +98,7 @@ public class FanLightController
             .ToList();
     }
 
-    public static FanLightController CreateFanLightController(string name)
+    public static FanLightController CreateFanLightController(string? name, float hardwareMin = 0, float hardwareMax = 100)
     {
         var computer = CreateComputer();
 
@@ -110,7 +117,7 @@ public class FanLightController
                 $"Sensor \"{name}\" not found. Available control sensors: {available}");
         }
 
-        return new FanLightController(sensor);
+        return new FanLightController(sensor, hardwareMin, hardwareMax);
     }
 
     private static Computer CreateComputer()
