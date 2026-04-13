@@ -1,6 +1,5 @@
 using flaas;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Hosting.WindowsServices;
 using System.Text.Json.Serialization;
 
 if (args.Contains("--list-sensors"))
@@ -62,9 +61,7 @@ await app.RunAsync();
 
 
 
-// Our custom JSON serializer context that generates code to serialize
-// arrays of planets so that we can use it with our HTTP endpoint.
-[JsonSerializable(typeof(State[]))]
+[JsonSerializable(typeof(State))]
 public partial class AppJsonSerializerContext : JsonSerializerContext
 {
 }
