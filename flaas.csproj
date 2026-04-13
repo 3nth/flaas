@@ -13,6 +13,9 @@
     <None Remove="install.ps1" />
   </ItemGroup>
   <ItemGroup>
+    <Content Update="appsettings*.json" CopyToPublishDirectory="Never" />
+  </ItemGroup>
+  <ItemGroup>
     <Content Include="install.ps1">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
