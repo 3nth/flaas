@@ -62,7 +62,8 @@ app.MapGet("/ui", () =>
     return Results.File(path, "text/html");
 });
 
-app.MapGet("/health", (MqttBridge mqtt) => Results.Ok(new Health(mqtt.MqttEnabled, mqtt.MqttConnected)));
+var deviceName = config["Mqtt:DeviceName"] ?? "Fan Light";
+app.MapGet("/health", (MqttBridge mqtt) => Results.Ok(new Health(deviceName, mqtt.MqttEnabled, mqtt.MqttConnected)));
 
 app.MapGet("/", () => Results.Ok(sensor.Get()));
 
@@ -95,7 +96,7 @@ await app.RunAsync();
 
 
 
-public record Health(bool MqttEnabled, bool MqttConnected);
+public record Health(string DeviceName, bool MqttEnabled, bool MqttConnected);
 
 [JsonSerializable(typeof(State))]
 [JsonSerializable(typeof(Health))]

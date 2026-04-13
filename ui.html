@@ -2,8 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
 <title>flaas</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23e2b714' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'><path d='M9 18h6M10 22h4M12 2a7 7 0 0 1 4 12.7V17a1 1 0 0 1-1 1h-6a1 1 0 0 1-1-1v-2.3A7 7 0 0 1 12 2z'/></svg>">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
@@ -11,137 +12,125 @@
     background: #1a1a2e;
     color: #e0e0e0;
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
     min-height: 100vh;
+    user-select: none;
+    -webkit-user-select: none;
   }
-  .card {
-    background: #16213e;
-    border-radius: 16px;
-    padding: 2rem;
-    width: 300px;
-    box-shadow: 0 4px 24px rgba(0,0,0,0.3);
-  }
-  h1 { font-size: 1.2rem; text-align: center; margin-bottom: 1.5rem; color: #a0a0b0; }
-  .toggle-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 1.5rem;
-  }
-  .status { font-size: 1.1rem; }
-  .switch {
+  .tile {
     position: relative;
-    width: 56px;
-    height: 30px;
-  }
-  .switch input { opacity: 0; width: 0; height: 0; }
-  .slider {
-    position: absolute;
-    inset: 0;
-    background: #333;
-    border-radius: 30px;
+    width: 140px;
+    height: 320px;
+    border-radius: 14px;
+    background: #2a2a3e;
+    overflow: hidden;
     cursor: pointer;
-    transition: background 0.3s;
+    touch-action: none;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.4);
   }
-  .slider::before {
-    content: "";
+  .fill {
     position: absolute;
-    width: 24px;
-    height: 24px;
-    left: 3px;
-    bottom: 3px;
-    background: #fff;
-    border-radius: 50%;
-    transition: transform 0.3s;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 0%;
+    background: linear-gradient(to top, #e2a714, #f0d060);
+    transition: height 0.15s ease-out, opacity 0.3s;
+    opacity: 0;
   }
-  .switch input:checked + .slider { background: #e2b714; }
-  .switch input:checked + .slider::before { transform: translateX(26px); }
-  .brightness-section { margin-bottom: 0.5rem; }
-  .brightness-label {
+  .tile.on .fill { opacity: 1; }
+  .tile-content {
+    position: relative;
+    z-index: 1;
+    height: 100%;
     display: flex;
-    justify-content: space-between;
-    margin-bottom: 0.5rem;
-    font-size: 0.9rem;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 1.5rem 1rem;
+  }
+  .pct {
+    font-size: 2rem;
+    font-weight: 600;
+    color: rgba(255,255,255,0.3);
+    transition: color 0.3s;
+  }
+  .tile.on .pct { color: rgba(0,0,0,0.7); }
+  .device-name {
+    font-size: 1.1rem;
+    font-weight: 500;
     color: #a0a0b0;
+    margin-bottom: 1rem;
   }
-  input[type="range"] {
-    -webkit-appearance: none;
-    width: 100%;
-    height: 8px;
-    border-radius: 4px;
-    background: #333;
-    outline: none;
+  .error {
+    color: #ff6b6b;
+    text-align: center;
+    font-size: 0.8rem;
+    min-height: 1.2em;
+    margin-top: 1rem;
+    max-width: 200px;
   }
-  input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    background: #e2b714;
-    cursor: pointer;
-  }
-  input[type="range"]::-moz-range-thumb {
-    width: 24px;
-    height: 24px;
-    border-radius: 50%;
-    background: #e2b714;
-    cursor: pointer;
-    border: none;
-  }
-  .error { color: #ff6b6b; text-align: center; font-size: 0.85rem; min-height: 1.2em; }
   .mqtt-status {
     display: flex;
     align-items: center;
     gap: 0.4rem;
-    font-size: 0.8rem;
-    color: #a0a0b0;
-    justify-content: center;
-    margin-top: 1rem;
+    font-size: 0.75rem;
+    color: #555;
+    margin-top: 0.75rem;
   }
+  footer {
+    position: fixed;
+    bottom: 12px;
+    left: 0;
+    right: 0;
+    text-align: center;
+    font-size: 0.7rem;
+  }
+  footer a {
+    color: #555;
+    text-decoration: none;
+  }
+  footer a:hover { color: #888; }
   .mqtt-dot {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
     border-radius: 50%;
     background: #555;
   }
   .mqtt-dot.connected { background: #4caf50; }
   .mqtt-dot.disconnected { background: #ff6b6b; }
-  .mqtt-dot.disabled { background: #555; }
 </style>
 </head>
 <body>
-<div class="card">
-  <h1>flaas</h1>
-  <div class="toggle-row">
-    <span class="status" id="status">--</span>
-    <label class="switch">
-      <input type="checkbox" id="toggle">
-      <span class="slider"></span>
-    </label>
-  </div>
-  <div class="brightness-section">
-    <div class="brightness-label">
-      <span>Brightness</span>
-      <span id="brightness-val">--</span>
-    </div>
-    <input type="range" id="brightness" min="1" max="100" value="75">
-  </div>
-  <p class="error" id="error"></p>
-  <div class="mqtt-status" id="mqtt-status" style="display:none">
-    <span class="mqtt-dot" id="mqtt-dot"></span>
-    <span id="mqtt-label">MQTT</span>
+<span class="device-name" id="device-name"></span>
+<div class="tile" id="tile">
+  <div class="fill" id="fill"></div>
+  <div class="tile-content">
+    <span class="pct" id="pct">--%</span>
   </div>
 </div>
+<p class="error" id="error"></p>
+<div class="mqtt-status" id="mqtt-status" style="display:none">
+  <span class="mqtt-dot" id="mqtt-dot"></span>
+  <span id="mqtt-label">MQTT</span>
+</div>
+<footer><a href="https://github.com/3nth/flaas">flaas</a></footer>
 <script>
-  const toggle = document.getElementById('toggle');
-  const brightness = document.getElementById('brightness');
-  const status = document.getElementById('status');
-  const brightnessVal = document.getElementById('brightness-val');
+  const tile = document.getElementById('tile');
+  const fill = document.getElementById('fill');
+  const pct = document.getElementById('pct');
   const error = document.getElementById('error');
-
-  let updating = false;
   const apiKey = new URLSearchParams(location.search).get('key') || '';
+
+  let isOn = false;
+  let brightness = 75;
+  let updating = false;
+  let dragging = false;
+  let dragMoved = false;
+  let debounce;
 
   async function api(path, body, method) {
     error.textContent = '';
@@ -163,47 +152,75 @@
     }
   }
 
+  function render() {
+    tile.classList.toggle('on', isOn);
+    fill.style.height = (isOn ? brightness : 0) + '%';
+    pct.textContent = Math.round(brightness) + '%';
+  }
+
   async function refresh() {
+    if (dragging) return;
     const state = await api('/');
     if (!state) return;
     updating = true;
-    toggle.checked = state.isOn;
-    brightness.value = state.brightness;
-    status.textContent = state.isOn ? 'On' : 'Off';
-    brightnessVal.textContent = Math.round(state.brightness) + '%';
+    isOn = state.isOn;
+    brightness = state.brightness;
+    render();
     updating = false;
   }
 
-  toggle.addEventListener('change', async () => {
-    if (updating) return;
-    await api(toggle.checked ? '/on' : '/off', undefined, 'POST');
-    await refresh();
+  function getY(e) {
+    return (e.touches ? e.touches[0] : e).clientY;
+  }
+
+  function brightnessFromY(y) {
+    const rect = tile.getBoundingClientRect();
+    const pctFromBottom = 1 - (y - rect.top) / rect.height;
+    return Math.round(Math.max(1, Math.min(100, pctFromBottom * 100)));
+  }
+
+  tile.addEventListener('pointerdown', e => {
+    dragging = true;
+    dragMoved = false;
+    tile.setPointerCapture(e.pointerId);
   });
 
-  let debounce;
-  brightness.addEventListener('input', () => {
-    brightnessVal.textContent = brightness.value + '%';
+  tile.addEventListener('pointermove', e => {
+    if (!dragging) return;
+    dragMoved = true;
+    brightness = brightnessFromY(e.clientY);
+    if (!isOn) isOn = true;
+    render();
     clearTimeout(debounce);
-    debounce = setTimeout(async () => {
-      if (updating) return;
-      await api('/brightness', { brightness: Number(brightness.value) });
-      await refresh();
-    }, 150);
+    debounce = setTimeout(() => {
+      api('/brightness', { brightness });
+    }, 100);
   });
 
+  tile.addEventListener('pointerup', async e => {
+    if (!dragging) return;
+    dragging = false;
+    if (!dragMoved) {
+      // tap: toggle on/off
+      await api(isOn ? '/off' : '/on', undefined, 'POST');
+      await refresh();
+    }
+  });
+
+  // MQTT status
   const mqttStatus = document.getElementById('mqtt-status');
   const mqttDot = document.getElementById('mqtt-dot');
   const mqttLabel = document.getElementById('mqtt-label');
+
+  const deviceNameEl = document.getElementById('device-name');
 
   async function refreshHealth() {
     try {
       const res = await fetch('/health');
       if (!res.ok) return;
       const h = await res.json();
-      if (!h.mqttEnabled) {
-        mqttStatus.style.display = 'none';
-        return;
-      }
+      if (h.deviceName) deviceNameEl.textContent = h.deviceName;
+      if (!h.mqttEnabled) { mqttStatus.style.display = 'none'; return; }
       mqttStatus.style.display = 'flex';
       mqttDot.className = 'mqtt-dot ' + (h.mqttConnected ? 'connected' : 'disconnected');
       mqttLabel.textContent = 'MQTT ' + (h.mqttConnected ? 'connected' : 'disconnected');
