@@ -11,6 +11,8 @@ builder.Services.ConfigureHttpJsonOptions(options =>
     options.SerializerOptions.TypeInfoResolverChain.Insert(0, AppJsonSerializerContext.Default);
 });
 
+builder.WebHost.UseUrls("http://*:5112");
+
 var app = builder.Build();
 
 var sensor = FanLightController.CreateFanLightController(app.Configuration["SensorName"]);
@@ -42,7 +44,7 @@ app.MapPost("/brightness", ([FromBody] State level) =>
 });
 
 
-await app.RunAsync("http://*:5112");
+await app.RunAsync();
 
 
 
