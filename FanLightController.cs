@@ -35,15 +35,6 @@ public class FanLightController
 
     public State Get()
     {
-        _sensor.Hardware.Update();
-        var hwValue = (int)(_sensor.Value ?? 0);
-
-        // Detect external changes, but ignore hardware flicker (±1)
-        if (!_isOn && hwValue > 1)
-            _isOn = true;
-        else if (_isOn && hwValue == 0)
-            _isOn = false;
-
         return new State(_isOn, _brightness);
     }
 
