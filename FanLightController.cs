@@ -11,6 +11,8 @@ public class FanLightController
     private float _brightness = 75;
     private bool _isOn;
 
+    public event Action<State>? StateChanged;
+
     public FanLightController(ISensor sensor)
     {
         _sensor = sensor;
@@ -59,8 +61,10 @@ public class FanLightController
 
     private void SaveState()
     {
-        var json = JsonSerializer.Serialize(new State(_isOn, _brightness));
+        var state = new State(_isOn, _brightness);
+        var json = JsonSerializer.Serialize(state);
         File.WriteAllText(StatePath, json);
+        StateChanged?.Invoke(state);
     }
 
     private void LoadState()
