@@ -60,11 +60,11 @@ Leave `Mqtt:Host` empty to disable MQTT and use only the REST API.
 
 ```bash
 dotnet build
-dotnet run                          # runs on http://localhost:5112
+dotnet run                          # runs on http://localhost:5112 (configurable via "Port" in appsettings.json)
 dotnet publish -c Release -o C:\flaas  # deploy to service directory
 ```
 
-**Note:** `appsettings.json` is excluded from publish output to avoid overwriting production config. Target: .NET 9.0, win-x64 only.
+**Note:** `appsettings.json` is excluded from publish output to avoid overwriting production config. Target: .NET 10.0, win-x64 only.
 
 ## Install as Windows Service
 
@@ -89,6 +89,7 @@ A web UI is available at `/ui`. The following endpoints are also available:
 
 | Method | Path          | Body                              | Description            |
 |--------|---------------|-----------------------------------|------------------------|
+| GET    | `/health`     | --                                | Health check (200 OK)  |
 | GET    | `/`           | --                                | Current state          |
 | POST   | `/`           | `{"isOn": bool, "brightness": N}` | Set full state         |
 | POST   | `/on`         | --                                | Turn on                |
