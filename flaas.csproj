@@ -1,29 +1,24 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
-
-	<PropertyGroup>
-		<TargetFramework>net8.0</TargetFramework>
-		<RuntimeIdentifier>win-x64</RuntimeIdentifier>
-		<Nullable>enable</Nullable>
-		<ImplicitUsings>enable</ImplicitUsings>
-		<InvariantGlobalization>true</InvariantGlobalization>
-		<IsTransformWebConfigDisabled>true</IsTransformWebConfigDisabled>
-		<ApplicationManifest>app.manifest</ApplicationManifest>
-		<UserSecretsId>ac945e51-3f59-4255-8638-33d02313b296</UserSecretsId>
-	</PropertyGroup>
-
-	<ItemGroup>
-	  <None Remove="install.ps1" />
-	</ItemGroup>
-
-	<ItemGroup>
-	  <Content Include="install.ps1">
-	    <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-	  </Content>
-	</ItemGroup>
-
-	<ItemGroup>
-		<PackageReference Include="LibreHardwareMonitorLib" Version="0.9.3" />
-		<PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="8.0.0" />
-	</ItemGroup>
-
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <IsTransformWebConfigDisabled>true</IsTransformWebConfigDisabled>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <UserSecretsId>ac945e51-3f59-4255-8638-33d02313b296</UserSecretsId>
+  </PropertyGroup>
+  <ItemGroup>
+    <None Remove="install.ps1" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="install.ps1">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="LibreHardwareMonitorLib" Version="0.9.6" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.WindowsServices" Version="10.0.5" />
+  </ItemGroup>
 </Project>
