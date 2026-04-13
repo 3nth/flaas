@@ -3,6 +3,20 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Hosting.WindowsServices;
 using System.Text.Json.Serialization;
 
+if (args.Contains("--list-sensors"))
+{
+    var sensors = FanLightController.ListControlSensors();
+    if (sensors.Count == 0)
+    {
+        Console.WriteLine("No control sensors found.");
+        return;
+    }
+    Console.WriteLine("Available control sensors:");
+    foreach (var name in sensors)
+        Console.WriteLine($"  {name}");
+    return;
+}
+
 var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddWindowsService();
 

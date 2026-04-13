@@ -55,32 +55,18 @@ public class FanLightController
             _sensor.Control.SetSoftware(_brightness);
     }
 
+    public static List<string> ListControlSensors()
+    {
+        var computer = CreateComputer();
+        return EnumerateSensors(computer.Hardware)
+            .Where(s => s.SensorType == SensorType.Control)
+            .Select(s => s.Name)
+            .ToList();
+    }
+
     public static FanLightController CreateFanLightController(string name)
     {
-        Computer computer = new Computer
-        {
-            IsCpuEnabled = false,
-            IsGpuEnabled = false,
-            IsMemoryEnabled = false,
-            IsMotherboardEnabled = true,
-            IsControllerEnabled = true,
-            IsNetworkEnabled = false,
-            IsStorageEnabled = false
-        };
-
-        computer.Open();
-        computer.Accept(new UpdateVisitor());
-
-        IEnumerable<ISensor> EnumerateSensors(IEnumerable<IHardware> hardware)
-        {
-            foreach (var hw in hardware)
-            {
-                foreach (var s in hw.Sensors)
-                    yield return s;
-                foreach (var s in EnumerateSensors(hw.SubHardware))
-                    yield return s;
-            }
-        }
+        var computer = CreateComputer();
 
         var allSensors = EnumerateSensors(computer.Hardware)
             .Where(s => s.SensorType == SensorType.Control)
@@ -98,6 +84,35 @@ public class FanLightController
         }
 
         return new FanLightController(sensor);
+    }
+
+    private static Computer CreateComputer()
+    {
+        var computer = new Computer
+        {
+            IsCpuEnabled = false,
+            IsGpuEnabled = false,
+            IsMemoryEnabled = false,
+            IsMotherboardEnabled = true,
+            IsControllerEnabled = true,
+            IsNetworkEnabled = false,
+            IsStorageEnabled = false
+        };
+
+        computer.Open();
+        computer.Accept(new UpdateVisitor());
+        return computer;
+    }
+
+    private static IEnumerable<ISensor> EnumerateSensors(IEnumerable<IHardware> hardware)
+    {
+        foreach (var hw in hardware)
+        {
+            foreach (var s in hw.Sensors)
+                yield return s;
+            foreach (var s in EnumerateSensors(hw.SubHardware))
+                yield return s;
+        }
     }
 }
 
