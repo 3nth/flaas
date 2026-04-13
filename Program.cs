@@ -27,7 +27,7 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 builder.WebHost.UseUrls("http://*:5112");
 
 var config = builder.Configuration;
-var hardwareMin = float.TryParse(config["HardwareMin"], out var min) ? min : 0;
+var hardwareMin = float.TryParse(config["HardwareMin"], out var min) ? min : 1;
 var hardwareMax = float.TryParse(config["HardwareMax"], out var max) ? max : 100;
 var sensor = FanLightController.CreateFanLightController(config["SensorName"], hardwareMin, hardwareMax);
 builder.Services.AddSingleton(sensor);

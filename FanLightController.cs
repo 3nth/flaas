@@ -15,7 +15,7 @@ public class FanLightController
 
     public event Action<State>? StateChanged;
 
-    public FanLightController(ISensor sensor, float hardwareMin = 0, float hardwareMax = 100)
+    public FanLightController(ISensor sensor, float hardwareMin = 1, float hardwareMax = 100)
     {
         _sensor = sensor;
         _hardwareMin = hardwareMin;
@@ -98,7 +98,7 @@ public class FanLightController
             .ToList();
     }
 
-    public static FanLightController CreateFanLightController(string? name, float hardwareMin = 0, float hardwareMax = 100)
+    public static FanLightController CreateFanLightController(string? name, float hardwareMin = 1, float hardwareMax = 100)
     {
         var computer = CreateComputer();
 

@@ -52,7 +52,7 @@ The MQTT bridge will:
 - Re-announce when HA restarts (via the `homeassistant/status` birth message)
 - Report availability (online/offline) including on unexpected disconnects via MQTT LWT
 
-`HardwareMin` and `HardwareMax` map the 1-100% brightness range to your hardware's actual usable range. For example, if your LED is off below 55%, set `HardwareMin` to 55. Both are optional and default to 0/100.
+`HardwareMin` and `HardwareMax` map the 1-100% brightness range to your hardware's actual usable range. For example, if your LED is off below 55%, set `HardwareMin` to 55. Both are optional and default to 1/100.
 
 Leave `Mqtt:Host` empty to disable MQTT and use only the REST API.
 
