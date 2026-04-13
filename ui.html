@@ -90,6 +90,24 @@
     border: none;
   }
   .error { color: #ff6b6b; text-align: center; font-size: 0.85rem; min-height: 1.2em; }
+  .mqtt-status {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.8rem;
+    color: #a0a0b0;
+    justify-content: center;
+    margin-top: 1rem;
+  }
+  .mqtt-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #555;
+  }
+  .mqtt-dot.connected { background: #4caf50; }
+  .mqtt-dot.disconnected { background: #ff6b6b; }
+  .mqtt-dot.disabled { background: #555; }
 </style>
 </head>
 <body>
@@ -110,6 +128,10 @@
     <input type="range" id="brightness" min="1" max="100" value="75">
   </div>
   <p class="error" id="error"></p>
+  <div class="mqtt-status" id="mqtt-status" style="display:none">
+    <span class="mqtt-dot" id="mqtt-dot"></span>
+    <span id="mqtt-label">MQTT</span>
+  </div>
 </div>
 <script>
   const toggle = document.getElementById('toggle');
@@ -165,8 +187,29 @@
     }, 150);
   });
 
+  const mqttStatus = document.getElementById('mqtt-status');
+  const mqttDot = document.getElementById('mqtt-dot');
+  const mqttLabel = document.getElementById('mqtt-label');
+
+  async function refreshHealth() {
+    try {
+      const res = await fetch('/health');
+      if (!res.ok) return;
+      const h = await res.json();
+      if (!h.mqttEnabled) {
+        mqttStatus.style.display = 'none';
+        return;
+      }
+      mqttStatus.style.display = 'flex';
+      mqttDot.className = 'mqtt-dot ' + (h.mqttConnected ? 'connected' : 'disconnected');
+      mqttLabel.textContent = 'MQTT ' + (h.mqttConnected ? 'connected' : 'disconnected');
+    } catch {}
+  }
+
   refresh();
+  refreshHealth();
   setInterval(refresh, 5000);
+  setInterval(refreshHealth, 5000);
 </script>
 </body>
 </html>

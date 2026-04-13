@@ -13,6 +13,9 @@ public class MqttBridge : BackgroundService
     private IMqttClient? _client;
     private bool _hasConnected;
 
+    public bool MqttEnabled => !string.IsNullOrEmpty(_config["Mqtt:Host"]);
+    public bool MqttConnected => _client?.IsConnected == true;
+
     private string TopicPrefix => _config["Mqtt:TopicPrefix"] ?? "flaas";
     private string StateTopic => $"{TopicPrefix}/light/state";
     private string BrightnessStateTopic => $"{TopicPrefix}/light/brightness/state";

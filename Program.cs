@@ -32,7 +32,8 @@ var hardwareMax = float.TryParse(config["HardwareMax"], out var max) ? max : 100
 using var loggerFactory = LoggerFactory.Create(b => b.AddConsole());
 var sensor = FanLightController.CreateFanLightController(config["SensorName"], loggerFactory.CreateLogger<FanLightController>(), hardwareMin, hardwareMax);
 builder.Services.AddSingleton(sensor);
-builder.Services.AddHostedService<flaas.MqttBridge>();
+builder.Services.AddSingleton<MqttBridge>();
+builder.Services.AddHostedService<MqttBridge>(sp => sp.GetRequiredService<MqttBridge>());
 
 var app = builder.Build();
 
@@ -42,7 +43,7 @@ app.MapGet("/ui", () =>
     return Results.File(path, "text/html");
 });
 
-app.MapGet("/health", () => Results.Ok());
+app.MapGet("/health", (MqttBridge mqtt) => Results.Ok(new Health(mqtt.MqttEnabled, mqtt.MqttConnected)));
 
 app.MapGet("/", () => Results.Ok(sensor.Get()));
 
@@ -75,7 +76,10 @@ await app.RunAsync();
 
 
 
+public record Health(bool MqttEnabled, bool MqttConnected);
+
 [JsonSerializable(typeof(State))]
+[JsonSerializable(typeof(Health))]
 public partial class AppJsonSerializerContext : JsonSerializerContext
 {
 }
