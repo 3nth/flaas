@@ -30,6 +30,12 @@ var app = builder.Build();
 
 var sensor = FanLightController.CreateFanLightController(app.Configuration["SensorName"]);
 
+app.MapGet("/ui", () =>
+{
+    var path = Path.Combine(AppContext.BaseDirectory, "ui.html");
+    return Results.File(path, "text/html");
+});
+
 app.MapGet("/", () => Results.Ok(sensor.Get()));
 
 app.MapPost("/", ([FromBody] State state) =>
