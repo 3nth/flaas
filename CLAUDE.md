@@ -18,7 +18,7 @@ dotnet publish -c Release -o C:\flaas  # deploy to service directory
 
 **Note:** `appsettings.json` is excluded from publish output to avoid overwriting production config.
 
-Target: .NET 9.0, win-x64 only.
+Target: .NET 10.0, win-x64 only.
 
 ## Install as Windows Service
 
@@ -33,7 +33,7 @@ Defaults to LocalSystem (needs admin for LibreHardwareMonitor). Override with `-
 
 Three source files, no layers:
 
-- **Program.cs** — Minimal API setup with five endpoints. Configures Windows Service hosting and AOT-compatible JSON serialization (`AppJsonSerializerContext`). Hardcoded to listen on `http://*:5112`.
+- **Program.cs** — Minimal API setup with six endpoints (including `/health`). Configures Windows Service hosting and AOT-compatible JSON serialization (`AppJsonSerializerContext`). Listens on configurable port (default `5112`).
 - **FanLightController.cs** — Stateful singleton that wraps a LibreHardwareMonitor `ISensor`. Tracks `_isOn` and `_brightness` in memory. Fires `StateChanged` event on every mutation. `CreateFanLightController` scans motherboard sub-hardware for a `SensorType.Control` sensor matching the configured name.
 - **MqttBridge.cs** — `BackgroundService` that connects to an MQTT broker and publishes HA MQTT Discovery config (default schema with separate state/brightness topics). Subscribes to command topics for on/off and brightness. Listens to `homeassistant/status` birth message to re-announce on HA restart. Publishes availability via LWT.
 
@@ -43,6 +43,7 @@ Three source files, no layers:
 
 | Method | Path          | Body                              | Description          |
 |--------|---------------|-----------------------------------|----------------------|
+| GET    | `/health`     | —                                 | Health check (200 OK)|
 | GET    | `/`           | —                                 | Current state        |
 | POST   | `/`           | `{"isOn": bool, "brightness": N}` | Set full state       |
 | POST   | `/on`         | —                                 | Turn on              |
