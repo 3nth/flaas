@@ -26,9 +26,11 @@ builder.Services.ConfigureHttpJsonOptions(options =>
 
 builder.WebHost.UseUrls("http://*:5112");
 
-var app = builder.Build();
+var sensor = FanLightController.CreateFanLightController(builder.Configuration["SensorName"]);
+builder.Services.AddSingleton(sensor);
+builder.Services.AddHostedService<flaas.MqttBridge>();
 
-var sensor = FanLightController.CreateFanLightController(app.Configuration["SensorName"]);
+var app = builder.Build();
 
 app.MapGet("/ui", () =>
 {
