@@ -4,12 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
 <title>flaas</title>
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23e2b714' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'><path d='M9 18h6M10 22h4M12 2a7 7 0 0 1 4 12.7V17a1 1 0 0 1-1 1h-6a1 1 0 0 1-1-1v-2.3A7 7 0 0 1 12 2z'/></svg>">
+<link rel="icon" id="favicon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23555' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'><path d='M9 18h6M10 22h4M12 2a7 7 0 0 1 4 12.7V17a1 1 0 0 1-1 1h-6a1 1 0 0 1-1-1v-2.3A7 7 0 0 1 12 2z'/></svg>">
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-    background: #1a1a2e;
+    background: #3a3020;
     color: #e0e0e0;
     display: flex;
     flex-direction: column;
@@ -19,8 +19,17 @@
     user-select: none;
     -webkit-user-select: none;
   }
+  .room-overlay {
+    position: fixed;
+    inset: 0;
+    background: #1a1a2e;
+    pointer-events: none;
+    transition: opacity 0.4s ease-out;
+    z-index: 0;
+  }
   .tile {
     position: relative;
+    z-index: 1;
     width: 140px;
     height: 320px;
     border-radius: 14px;
@@ -41,31 +50,27 @@
     opacity: 0;
   }
   .tile.on .fill { opacity: 1; }
-  .tile-content {
+  .pct {
     position: relative;
     z-index: 1;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding: 1.5rem 1rem;
-  }
-  .pct {
-    font-size: 2rem;
+    font-size: 1.8rem;
     font-weight: 600;
-    color: rgba(255,255,255,0.3);
-    transition: color 0.3s;
+    color: #a0a0b0;
+    margin-top: 0.75rem;
+    transition: color 0.4s;
   }
-  .tile.on .pct { color: rgba(0,0,0,0.7); }
   .device-name {
-    font-size: 1.1rem;
+    position: relative;
+    z-index: 1;
+    font-size: 1.5rem;
     font-weight: 500;
     color: #a0a0b0;
     margin-bottom: 1rem;
+    transition: color 0.4s;
   }
   .error {
+    position: relative;
+    z-index: 1;
     color: #ff6b6b;
     text-align: center;
     font-size: 0.8rem;
@@ -74,15 +79,19 @@
     max-width: 200px;
   }
   .mqtt-status {
+    position: relative;
+    z-index: 1;
     display: flex;
     align-items: center;
     gap: 0.4rem;
-    font-size: 0.75rem;
+    font-size: 0.85rem;
     color: #555;
     margin-top: 0.75rem;
+    transition: color 0.4s;
   }
   footer {
     position: fixed;
+    z-index: 1;
     bottom: 12px;
     left: 0;
     right: 0;
@@ -92,6 +101,8 @@
   footer a {
     color: #555;
     text-decoration: none;
+    font-size: 0.85rem;
+    transition: color 0.4s;
   }
   footer a:hover { color: #888; }
   .mqtt-dot {
@@ -105,13 +116,12 @@
 </style>
 </head>
 <body>
+<div class="room-overlay" id="room-overlay"></div>
 <span class="device-name" id="device-name"></span>
 <div class="tile" id="tile">
   <div class="fill" id="fill"></div>
-  <div class="tile-content">
-    <span class="pct" id="pct">--%</span>
-  </div>
 </div>
+<span class="pct" id="pct">--%</span>
 <p class="error" id="error"></p>
 <div class="mqtt-status" id="mqtt-status" style="display:none">
   <span class="mqtt-dot" id="mqtt-dot"></span>
@@ -123,6 +133,7 @@
   const fill = document.getElementById('fill');
   const pct = document.getElementById('pct');
   const error = document.getElementById('error');
+  const roomOverlay = document.getElementById('room-overlay');
   const apiKey = new URLSearchParams(location.search).get('key') || '';
 
   let isOn = false;
@@ -152,10 +163,37 @@
     }
   }
 
+  const deviceNameEl = document.getElementById('device-name');
+  const mqttLabelEl = document.getElementById('mqtt-label');
+  const footerLink = document.querySelector('footer a');
+  const favicon = document.getElementById('favicon');
+
   function render() {
     tile.classList.toggle('on', isOn);
     fill.style.height = (isOn ? brightness : 0) + '%';
     pct.textContent = Math.round(brightness) + '%';
+    const t = isOn ? brightness / 100 : 0;
+    roomOverlay.style.opacity = 1 - t * 0.85;
+    // shift text from cool gray toward warm tan as room brightens
+    const r = Math.round(160 + t * 60);
+    const g = Math.round(160 + t * 40);
+    const b = Math.round(176 - t * 60);
+    const textColor = `rgb(${r},${g},${b})`;
+    deviceNameEl.style.color = textColor;
+    pct.style.color = textColor;
+    // subtler for secondary text
+    const sr = Math.round(85 + t * 50);
+    const sg = Math.round(85 + t * 35);
+    const sb = Math.round(85 - t * 20);
+    const subColor = `rgb(${sr},${sg},${sb})`;
+    mqttLabelEl.style.color = subColor;
+    footerLink.style.color = subColor;
+    // favicon: interpolate from gray to warm yellow
+    const fr = Math.round(85 + t * 141);
+    const fg = Math.round(85 + t * 98);
+    const fb = Math.round(85 - t * 65);
+    const fc = `%23${fr.toString(16).padStart(2,'0')}${fg.toString(16).padStart(2,'0')}${fb.toString(16).padStart(2,'0')}`;
+    favicon.href = `data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='${fc}' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'><path d='M9 18h6M10 22h4M12 2a7 7 0 0 1 4 12.7V17a1 1 0 0 1-1 1h-6a1 1 0 0 1-1-1v-2.3A7 7 0 0 1 12 2z'/></svg>`;
   }
 
   async function refresh() {
@@ -211,8 +249,6 @@
   const mqttStatus = document.getElementById('mqtt-status');
   const mqttDot = document.getElementById('mqtt-dot');
   const mqttLabel = document.getElementById('mqtt-label');
-
-  const deviceNameEl = document.getElementById('device-name');
 
   async function refreshHealth() {
     try {
